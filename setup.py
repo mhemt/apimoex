@@ -10,13 +10,13 @@ python_minimal = "3.6"
 if sys.version_info < tuple(int(i) for i in python_minimal.split(".")):
     raise RuntimeError(f"{name} requires Python {python_minimal}+")
 
-with open(pathlib.Path(__file__).parent / "apimoex" / "__init__.py") as file:
+with open(pathlib.Path(__file__).parent / "apimoex" / "__init__.py", encoding="utf-8") as file:
     try:
         version = re.search(r"^__version__ = \"(.+)\"$", file.read(), re.M)[1]
     except IndexError:
         raise RuntimeError("Unable to determine version.")
 
-with open("README.rst") as file:
+with open("README.rst", encoding="utf-8") as file:
     long_description = file.read()
 
 setuptools.setup(
