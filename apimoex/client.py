@@ -8,6 +8,8 @@ from typing import Union
 import requests
 
 # Стандартные настройки для запроса расширенного представления json без дополнительных метаданных.
+from requests.cookies import RequestsCookieJar
+
 BASE_QUERY = {"iss.json": "extended", "iss.meta": "off"}
 
 
@@ -25,7 +27,12 @@ class ISSClient(abc.Iterable):
     поддерживается протокол итерируемого для отдельных блоков или метод get_all для их автоматического сбора.
     """
 
-    def __init__(self, session: requests.Session, url: str, query: dict = None):
+    def __init__(
+        self,
+        session: requests.Session,
+        url: str,
+        query: dict = None,
+    ):
         """MOEX ISS является REST сервером.
 
         Полный перечень запросов и параметров к ним https://iss.moex.com/iss/reference/
@@ -40,8 +47,10 @@ class ISSClient(abc.Iterable):
             требование предоставить ответ в виде расширенного json без метаданных.
         """
         self._session = session
-        self._url = url
-        self._query = query or dict()
+        self._auth_url: str = "https://passport.moex.com/authenticate"
+        self._cookie_jar: Optional[RequestsCookieJar] = None
+        self._url: str = url
+        self._query: dict = query or dict()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(url={self._url}, query={self._query})"
@@ -80,9 +89,13 @@ class ISSClient(abc.Iterable):
                     return
                 start += block_size
 
-    def get(
-        self, start: Optional[int] = None
-    ) -> Dict[str, List[Dict[str, Union[str, int, float]]]]:
+    def authenticate(self, user: str = None, password: str = None) -> None:
+        response = self._session.get(self._auth_url, auth=(user, password))
+
+        if response.status_code == 200:
+            self._cookie_jar = response.cookies
+
+    def get(self, start: Optional[int] = None) -> Dict[str, List[Dict[str, Union[str, int, float]]]]:
         """Загрузка данных.
 
         :param start:
@@ -94,7 +107,7 @@ class ISSClient(abc.Iterable):
             в pandas.DataFrame.
         """
         query = self._make_query(start)
-        with self._session.get(self._url, params=query) as respond:
+        with self._session.get(self._url, params=query, cookies=self._cookie_jar) as respond:
             try:
                 respond.raise_for_status()
             except requests.HTTPError:

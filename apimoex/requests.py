@@ -4,6 +4,7 @@
     Полный перечень запросов https://iss.moex.com/iss/reference/
     Дополнительное описание https://fs.moex.com/files/6523
 """
+import os
 from datetime import datetime
 from typing import Dict
 from typing import List
@@ -13,7 +14,7 @@ from typing import Union
 
 import requests
 
-from . import client
+from apimoex import client
 
 __all__ = [
     "get_reference",
@@ -119,6 +120,7 @@ def _get_short_data(
         Конкретная таблица из запроса.
     """
     iss = client.ISSClient(session, url, query)
+    iss.authenticate(user=os.getenv('MOEX_USER'), password=os.getenv('MOEX_PASSWORD'))
     data = iss.get()
 
     return _get_table(data, table)
@@ -145,6 +147,7 @@ def _get_long_data(
         Конкретная таблица из запроса.
     """
     iss = client.ISSClient(session, url, query)
+    iss.authenticate(user=os.getenv('MOEX_USER'), password=os.getenv('MOEX_PASSWORD'))
     data = iss.get_all()
 
     return _get_table(data, table)
