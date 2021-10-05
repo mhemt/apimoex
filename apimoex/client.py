@@ -90,7 +90,11 @@ class ISSClient(abc.Iterable):
                 start += block_size
 
     def authenticate(self, user: str = None, password: str = None) -> None:
-        response = self._session.get(self._auth_url, auth=(user, password))
+        auth = None
+        if user and password:
+            auth = (user, password)
+
+        response = self._session.get(self._auth_url, auth=auth)
 
         if response.status_code == 200:
             self._cookie_jar = response.cookies
